@@ -1,8 +1,8 @@
 #!/usr/bin/env make -f
 
 CC=gcc
-CFLAGS=-c -Wall
-LDFLAGS=-lX11
+CFLAGS+=-c -Wall
+LDFLAGS+=
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=cws
