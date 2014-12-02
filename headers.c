@@ -5,6 +5,7 @@
 #include "headers.h"
 
 #define HTTP_HEADER_BUFFERS 1000
+#define HTTP_METHOD_LENGTH 10
 
 struct http_header_buffer {
     int length;
@@ -19,7 +20,6 @@ struct http_header_string {
 
 static struct {
     int buf;                        // index of the next buffer to use
-    int carriage_return;            // whether the previous character was \r
     int decoding;                   // index of the current header
     struct http_header_buffer buffers[HTTP_HEADER_BUFFERS];
     struct http_header_string headers[HTTP_HEADER_BUFFERS];
@@ -30,35 +30,32 @@ void headers_consume (int length, char *buffer) {
         fprintf (stderr, "OUT OF ROOM\n");
         return;
     }
-    headers.buffers[headers.buf].length = length;
-    headers.buffers[headers.buf].buffer = buffer;
-    char *p = buffer;
-    while (length--) {
+    int buf = headers.buf++;
+    headers.buffers[buf].length = length;
+    headers.buffers[buf].buffer = buffer;
+    int i;
+    for (i = 0; i < length; i++) {
         headers.headers[headers.decoding].length++;
-        if (headers.carriage_return) {
-            headers.carriage_return = 0;
-            if (*p == '\n') {
-                // end of header
-                headers.headers[headers.decoding].length -= 2;
-                headers.decoding++;
-                if (headers.decoding >= HTTP_HEADER_BUFFERS) {
-                    fprintf (stderr, "OUT OF ROOM\n");
-                    return;
-                }
-                if (length) {
-                    headers.headers[headers.decoding].index = headers.buf;
-                    headers.headers[headers.decoding].offset = (p - buffer) + 1;
-                } else {
-                    headers.headers[headers.decoding].index = headers.buf + 1;
-                    headers.headers[headers.decoding].offset = 0;
-                }
-                continue;
+        if (buffer[i] == '\n' && (
+                (i > 0 && buffer[i - 1] == '\r') || (
+                    buf > 0 &&
+                    headers.buffers[buf - 1].buffer[headers.buffers[buf - 1].length - 1] == '\r'))) {
+            // end of header
+            headers.headers[headers.decoding].length -= 2;
+            headers.decoding++;
+            if (headers.decoding >= HTTP_HEADER_BUFFERS) {
+                fprintf (stderr, "OUT OF ROOM\n");
+                return;
+            }
+            if (length) {
+                headers.headers[headers.decoding].index = buf;
+                headers.headers[headers.decoding].offset = i + 1;
+            } else {
+                headers.headers[headers.decoding].index = buf + 1;
+                headers.headers[headers.decoding].offset = 0;
             }
         }
-        if (*p == '\r') headers.carriage_return = 1;
-        p++;
     }
-    headers.buf++;
 }
 
 void headers_cleanup () {
@@ -68,11 +65,10 @@ void headers_cleanup () {
         headers.buffers[i].buffer = NULL;
     }
     headers.buf = 0;
-    headers.carriage_return = 0;
     headers.decoding = 0;
 }
 
-char *get (int id) {
+char *get_header (int id) {
     struct http_header_string field = headers.headers[id];
     if (field.length <= 0) {
         fprintf (stderr, "Empty field (length=%d)\n", field.length);
@@ -82,9 +78,8 @@ char *get (int id) {
     char *pos = dst;
     int rem = field.length;
     int index = field.index;
-    int offset = field.offset;
-    int srclen = headers.buffers[index].length - offset;
-    char *src = headers.buffers[index].buffer + offset;
+    int srclen = headers.buffers[index].length - field.offset;
+    char *src = headers.buffers[index].buffer + field.offset;
     while (rem > 0) {
         while (srclen-- && rem--) {
             *pos++ = *(src++);
@@ -100,4 +95,37 @@ char *get (int id) {
     }
     dst[field.length] = 0;
     return dst;
+}
+
+char *get_method () {
+    struct http_header_string field = headers.headers[0];
+    if (field.length <= 0) {
+        fprintf (stderr, "Empty field (length=%d)\n", field.length);
+        return NULL;
+    }
+    char *dst = malloc (HTTP_METHOD_LENGTH * sizeof(char));
+    char *pos = dst;
+    int rem = field.length;
+    int index = field.index;
+    int srclen = headers.buffers[index].length - field.offset;
+    char *src = headers.buffers[index].buffer + field.offset;
+    while (rem > 0) {
+        while (srclen-- && rem-- && *src != ' ') {
+            *pos++ = *(src++);
+        }
+        if (*src == ' ') {
+            *pos++ = 0;
+            return dst;
+        }
+        index++;
+        if (index > headers.buf) {
+            fprintf (stderr, "Overran buffer\n");
+            free (dst);
+            return NULL;
+        }
+        srclen = headers.buffers[index].length;
+        src = headers.buffers[index].buffer;
+    }
+    free (dst);
+    return NULL;
 }
