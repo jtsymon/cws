@@ -10,6 +10,8 @@
 #include "worker.h"
 #include "signals.h"
 #include "io.h"
+#include "headers.h"
+#include "response.h"
 
 struct worker {
     int id;
@@ -27,7 +29,8 @@ static void work (int id, int pipe) {
     int clientfd;
     socklen_t clilen;
     struct sockaddr_in cli_addr;
-    char buffer[256];
+    char *buffer;
+    char response_buffer[255];
 
     non_block (pipe);
 
@@ -38,6 +41,7 @@ static void work (int id, int pipe) {
 
     int i, n;
     while (1) {
+        headers_cleanup ();
         n = epoll_wait (epollfd, events, MAX_QUEUE, -1);
         for (i = 0; i < n; i++) {
             if ((events[i].events & EPOLLERR) ||
@@ -51,14 +55,70 @@ static void work (int id, int pipe) {
                 if (clientfd < 0) {
                     continue;
                 }
-                bzero (buffer,256);
-                if (read (clientfd, buffer, 255) < 0) {
-                    continue;
+                int len;
+                do {
+                    buffer = malloc (255);
+                    len = read (clientfd, buffer, 255);
+                    if (headers_consume (len, buffer)) {
+                        break;
+                    }
+                } while (len > 0);
+                
+                int j;
+                response_init (200);
+                sprintf (response_buffer, "%sHandled by worker #%d\nRequest:\n", get_response(), id);
+                if (write (clientfd, response_buffer, strlen (response_buffer)) < 0) {
+                    goto hangup;
                 }
-                sprintf (buffer, "Handled by worker #%d\n", id);
-                if (write (clientfd, buffer, strlen (buffer)) < 0) {
-                    continue;
+                char *field;
+                if ((field = get_request (0))) {
+                    sprintf (response_buffer, "Method: %s\n", field);
+                    free (field);
+                    if (write (clientfd, response_buffer, strlen (response_buffer)) < 0) {
+                        goto hangup;
+                    }
                 }
+                if ((field = get_request (1))) {
+                    sprintf (response_buffer, "Path: %s\n", field);
+                    free (field);
+                    if (write (clientfd, response_buffer, strlen (response_buffer)) < 0) {
+                        goto hangup;
+                    }
+                }
+                if (headers_has_version () && (field = get_request (2))) {
+                    if (field) {
+                        sprintf (response_buffer, "Version: %s\n", field);
+                        free (field);
+                        if (write (clientfd, response_buffer, strlen (response_buffer)) < 0) {
+                            goto hangup;
+                        }
+                    }
+                }
+
+                sprintf (response_buffer, "Headers:\n");
+                if (write (clientfd, response_buffer, strlen (response_buffer)) < 0) {
+                    goto hangup;
+                }
+                for (j = 0; ; j++) {
+                    char *key = get_header (j, 0);
+                    char *val = get_header (j, 1);
+                    if (!key || !val) {
+                        free (key);
+                        free (val);
+                        break;
+                    }
+                    if (write (clientfd, key, strlen(key)) < 0 ||
+                            write (clientfd, " = ", 3) < 0 ||
+                            write (clientfd, val, strlen(val)) < 0 ||
+                            write (clientfd, "\n", 1) < 0) {
+                        free (key);
+                        free (val);
+                        goto hangup;
+                    }
+                    free (key);
+                    free (val);
+                }
+                hangup:
                 close (clientfd);
             } else {
                 // pipe event

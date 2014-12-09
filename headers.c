@@ -14,6 +14,7 @@
 #define HTTP_OUT_OF_SEGMENTS    2
 #define HTTP_INVALID_HEADER     3
 #define HTTP_INVALID_REQUEST    4
+#define HTTP_END_OF_HEADERS     5
 
 struct http_header_buffer {
     int length;
@@ -50,26 +51,6 @@ static struct {
     struct http_header_string       headers[HTTP_HEADER_BUFFERS];
 } headers;
 
-static inline int skip_whitespace_horiz (int i, int length, char *buffer) {
-    for (; i < length; i++) {
-        if (buffer[i] != ' ' && buffer[i] != '\t') {
-            headers.skip_whitespace = 0;
-            break;
-        }
-    }
-    return i;
-}
-
-static inline int skip_whitespace (int i, int length, char *buffer) {
-    for (; i < length; i++) {
-        if (buffer[i] != ' ' && buffer[i] != '\t' && buffer[i] != '\r' && buffer[i] != '\n') {
-            headers.skip_whitespace = 0;
-            break;
-        }
-    }
-    return i;
-}
-
 int headers_consume (int length, char *buffer) {
     if (headers.error) {
         return headers.error;
@@ -87,18 +68,22 @@ int headers_consume (int length, char *buffer) {
         return (headers.error = HTTP_OUT_OF_SEGMENTS);
     }
     if (headers.skip_whitespace) {
-        if (headers.skip_whitespace == 2) {
-            i = skip_whitespace (i, length, buffer);
-        } else {
-            i = skip_whitespace_horiz (i, length, buffer);
-        }
-        headers.whitespace.over_whitespace = 0;
-        if (headers.has_request) {
-            headers.headers[headers.decoding].buffer = buf;
-            headers.headers[headers.decoding].offset = i;
-        } else {
-            headers.request[headers.decoding].buffer = buf;
-            headers.request[headers.decoding].offset = i;
+        for (; i < length; i++) {
+            if (buffer[i] != ' ' && buffer[i] != '\t') {
+                if (headers.skip_whitespace == 2 && buffer[i] == '\n') {
+                    return (headers.error = HTTP_END_OF_HEADERS);
+                }
+                headers.skip_whitespace = 0;
+                headers.whitespace.over_whitespace = 0;
+                if (headers.has_request) {
+                    headers.headers[headers.decoding].buffer = buf;
+                    headers.headers[headers.decoding].offset = i;
+                } else {
+                    headers.request[headers.decoding].buffer = buf;
+                    headers.request[headers.decoding].offset = i;
+                }
+                break;
+            }
         }
     }
     
@@ -221,11 +206,15 @@ void headers_cleanup () {
     headers.error = 0;
     headers.skip_whitespace = 0;
     bzero (&headers.whitespace, sizeof (struct http_header_whitespace));
+    bzero (&headers.request, sizeof (headers.request));
+    bzero (&headers.headers, sizeof (headers.headers));
 }
 
 static inline char *get_field (struct http_header_string field) {
     if (field.length <= 0) {
+#ifdef DEBUG_HTTP_HEADER
         fprintf (stderr, "Empty field (length=%d)\n", field.length);
+#endif
         return NULL;
     }
     char *dst = malloc ((field.length + 1) * sizeof(char));
