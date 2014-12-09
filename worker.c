@@ -169,6 +169,8 @@ static void respawn (int id) {
 void check_workers() {
     // check workers are alive
     int i;
+    // acknowledge dead workers
+    while (waitpid (-1, NULL, WNOHANG) > 0);
     for (i = 0; i < worker_count; i++) {
         int result = waitpid (workers[i].pid, NULL, WNOHANG);
         if (result < -1 || result > 0) {
