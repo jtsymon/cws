@@ -12,6 +12,7 @@
 #include "io.h"
 #include "signals.h"
 #include "worker.h"
+#include "process.h"
 
 static void signal_handler (int);
 static int selfpipe;
@@ -34,6 +35,9 @@ int main (int argc, char **argv) {
     int work = 4;
 
     sighandleall (&signal_handler, SA_RESTART);
+
+    argv0 = *argv;
+    setname ("cws[master]");
 
     int selfpiperead;
     {

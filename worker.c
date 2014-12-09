@@ -12,6 +12,7 @@
 #include "io.h"
 #include "headers.h"
 #include "response.h"
+#include "process.h"
 
 struct worker {
     int id;
@@ -24,6 +25,9 @@ const int worker_count;
 static struct worker *workers = NULL;
 
 static void work (int id, int pipe) {
+
+    setname ("cws[worker]#%d", id);
+
     sighandleall (SIG_IGN, 0);
     sighandle (SIG_DFL, 0, SIGTERM);
     int clientfd;
