@@ -54,7 +54,7 @@ void response_add (char *key, char *val) {
     response.last = header;
 }
 
-char *get_response () {
+char *get_response (int *len) {
     if (response.code < 100 || response.code >= 600) {
         return NULL;
     }
@@ -81,5 +81,8 @@ char *get_response () {
     *pos++ = '\r';
     *pos++ = '\n';
     length -= 2;
+    if (len) {
+        *len = (pos - result);
+    }
     return result;
 }
