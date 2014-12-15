@@ -279,3 +279,7 @@ char *headers_get_current_error () {
 int headers_has_version () {
     return headers.has_version;
 }
+
+int headers_has_request() {
+    return headers.has_request;
+}

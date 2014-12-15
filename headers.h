@@ -5,3 +5,4 @@ char *get_header (int header, int part);
 char *headers_get_error (int error);
 char *headers_get_current_error ();
 int headers_has_version ();
+int headers_has_request ();
