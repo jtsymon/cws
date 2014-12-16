@@ -11,8 +11,8 @@
 #include "worker.h"
 #include "signals.h"
 #include "io.h"
-#include "headers.h"
-#include "response.h"
+#include "http_request.h"
+#include "http_response.h"
 #include "process.h"
 
 struct worker {
