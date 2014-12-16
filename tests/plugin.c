@@ -1,4 +1,4 @@
-#include "plugin.h"
+#include "../src/plugin.h"
 
 int main (void) {
     struct plugin_t plugin;

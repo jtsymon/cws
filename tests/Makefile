@@ -4,7 +4,8 @@ SRC_DIR=../src
 
 -include ../build.Makefile
 
-CFLAGS+=-I$(SRC_DIR)
+CFLAGS+=
+LDFLAGS+=-ldl
 
 all: test
 

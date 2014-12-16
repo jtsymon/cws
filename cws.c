@@ -8,11 +8,11 @@
 #include <sys/wait.h>
 #include <sys/epoll.h>
 
-#include "misc.h"
-#include "io.h"
-#include "signals.h"
-#include "worker.h"
-#include "process.h"
+#include "src/misc.h"
+#include "src/io.h"
+#include "src/signals.h"
+#include "src/worker.h"
+#include "src/process.h"
 
 static void signal_handler (int);
 static int selfpipe;

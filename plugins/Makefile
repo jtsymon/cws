@@ -1,5 +1,7 @@
 #!/usr/bin/env make -f
 
+SRC_DIR=../src
+
 -include ../build.Makefile
 
 CFLAGS+=-fPIC

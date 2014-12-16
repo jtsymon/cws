@@ -4,7 +4,8 @@ SRC_DIR=src
 TESTS_DIR=tests
 PLUGINS_DIR=plugins
 
-CFLAGS+=-I$(SRC_DIR)
+CFLAGS+=
+LDFLAGS+=-ldl
 
 EXECUTABLE=cws
 
