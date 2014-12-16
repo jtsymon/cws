@@ -1,10 +1,11 @@
 #!/usr/bin/env make -f
 
 SRC_DIR=src
+INC_DIR=include
 TESTS_DIR=tests
 PLUGINS_DIR=plugins
 
-CFLAGS+=
+CFLAGS+=-I$(INC_DIR)
 LDFLAGS+=-ldl
 
 EXECUTABLE=cws

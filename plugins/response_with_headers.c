@@ -5,9 +5,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "../src/http_request.h"
-#include "../src/http_response.h"
-#include "../src/io.h"
+#include "http_request.h"
+#include "http_response.h"
+#include "io.h"
 
 void handle (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) {
     if (sock_fd < 0) {
