@@ -1,19 +1,32 @@
 #!/usr/bin/env make -f
 
-CC=gcc
-CFLAGS+=-c -Wall
-LDFLAGS+=
-SOURCES=$(wildcard *.c)
-OBJECTS=$(SOURCES:.c=.o)
+SRC_DIR=src
+TESTS_DIR=tests
+PLUGINS_DIR=plugins
+
+CFLAGS+=-I$(SRC_DIR)
+
 EXECUTABLE=cws
 
-all: $(SOURCES) $(EXECUTABLE)
+-include build.Makefile
 
-$(EXECUTABLE): $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+all: build plugins test
 
-.c.o:
-	$(CC) $(CFLAGS) $< -o $@
+run: build
+	./$(EXECUTABLE)
+
+test:
+	$(MAKE) -C $(TESTS_DIR) test
+
+plugins:
+	$(MAKE) -C $(PLUGINS_DIR)
+	
+build: $(CORE_OBJECTS) $(OBJECTS) $(EXECUTABLE)
 
 clean:
+	$(MAKE) -C $(SRC_DIR) clean
+	$(MAKE) -C $(TESTS_DIR) clean
+	$(MAKE) -C $(PLUGINS_DIR) clean
 	rm -f $(OBJECTS) $(EXECUTABLE)
+
+.PHONY: all run test plugins build clean

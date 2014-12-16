@@ -8,7 +8,7 @@
 #include <sys/wait.h>
 #include <sys/epoll.h>
 
-#include "cws.h"
+#include "misc.h"
 #include "io.h"
 #include "signals.h"
 #include "worker.h"

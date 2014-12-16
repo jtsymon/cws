@@ -7,7 +7,7 @@
 #include <sys/epoll.h>
 #include <errno.h>
 
-#include "cws.h"
+#include "misc.h"
 #include "worker.h"
 #include "signals.h"
 #include "io.h"

@@ -1,3 +1,7 @@
 cws
 *.o
+*.so
+tests/*
+!tests/*.c
+!tests/Makefile
 *.swp

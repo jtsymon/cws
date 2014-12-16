@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "cws.h"
+#include "misc.h"
 #include "signals.h"
 
 void sighandle (void (*handler)(int), int flags, int sig) {
