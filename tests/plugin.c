@@ -5,7 +5,7 @@ int main (void) {
     if (load_plugin (&plugin, "test")) {
         return 1;
     }
-    run_plugin (&plugin);
+    plugin.function();
     free_plugin (&plugin);
     return 0;
 }

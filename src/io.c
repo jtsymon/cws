@@ -1,6 +1,7 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <errno.h>
 
 #include "misc.h"
 #include "io.h"
@@ -63,3 +64,12 @@ void non_block (int fd) {
     }
 }
 
+int getSO_ERROR(int fd) {
+    int err = 1;
+    socklen_t len = sizeof err;
+    if (-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, (char *)&err, &len))
+        fprintf (stderr, "getSO_ERROR\n");
+    if (err)
+        errno = err;              // set errno to the socket SO_ERROR
+    return err;
+}

@@ -40,9 +40,3 @@ int load_plugin (struct plugin_t *plugin, char *name) {
     }
     return 0;
 }
-
-void run_plugin (struct plugin_t *plugin) {
-    if (plugin && plugin->function) {
-        plugin->function();
-    }
-}
