@@ -24,4 +24,4 @@ test: $(CORE_OBJECTS) $(OBJECTS) $(EXECUTABLES)
 clean:
 	rm -f $(OBJECTS) $(EXECUTABLES)
 
-.PHONY: all clean
+.PHONY: all test clean

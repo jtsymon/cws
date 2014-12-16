@@ -12,4 +12,4 @@ build: $(OBJECTS) $(LIBRARIES)
 clean:
 	rm -f $(OBJECTS) $(LIBRARIES)
 
-.PHONY: all clean
+.PHONY: all build clean

@@ -6,3 +6,5 @@ all: $(OBJECTS)
 
 clean:
 	rm -f $(OBJECTS)
+
+.PHONY: all clean
