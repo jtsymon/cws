@@ -1,34 +1,32 @@
 #!/usr/bin/env make -f
 
-SRC_DIR=src
 INC_DIR=include
 TESTS_DIR=tests
-PLUGINS_DIR=plugins
+LIB_DIR=lib
 
 CFLAGS+=-I$(INC_DIR)
-LDFLAGS+=-ldl
+LDFLAGS+=-l:lib/core.so
 
 EXECUTABLE=cws
 
 -include build.Makefile
 
-all: build plugins test
+all: build test
 
 run: build
 	./$(EXECUTABLE)
 
-test:
+test: lib
 	$(MAKE) -C $(TESTS_DIR) test
 
-plugins:
-	$(MAKE) -C $(PLUGINS_DIR)
+lib:
+	$(MAKE) -C $(LIB_DIR)
 	
-build: $(CORE_OBJECTS) $(OBJECTS) $(EXECUTABLE)
+build: lib $(OBJECTS) $(EXECUTABLE)
 
 clean:
-	$(MAKE) -C $(SRC_DIR) clean
 	$(MAKE) -C $(TESTS_DIR) clean
-	$(MAKE) -C $(PLUGINS_DIR) clean
+	$(MAKE) -C $(LIB_DIR) clean
 	rm -f $(OBJECTS) $(EXECUTABLE)
 
-.PHONY: all run test plugins build clean
+.PHONY: all run test lib build clean

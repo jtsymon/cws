@@ -1,29 +1,27 @@
 #!/usr/bin/env make -f
 
-SRC_DIR=../src
-INC_DIR=../include
-
--include ../build.Makefile
-
-CFLAGS+=-I$(INC_DIR)
-LDFLAGS+=-ldl
+DIRS = $(shell ls -d */)
 
 all: test
 
-test: $(CORE_OBJECTS) $(OBJECTS) $(EXECUTABLES)
-	@PATH=`pwd`;                            \
-	cd ../;                                 \
-	failed=0;                               \
+test: build
+	@failed=0;                              \
 	total=0;                                \
-	for test in $(EXECUTABLES); do          \
-		echo "*** Running test: '$$test'";  \
-		$$test || ((failed++));             \
+	for dir in $(DIRS); do                  \
+		echo "*** Running test: $$dir";     \
+		make -s -C $$dir test || ((failed++)); \
 		((total++));                        \
 	done;                                   \
 	echo "$$(($$total - $$failed))/$$total tests passed"
 
+build:
+	@for dir in $(DIRS); do \
+		make -C $$dir build; \
+	done
 
 clean:
-	rm -f $(OBJECTS) $(EXECUTABLES)
+	@for dir in $(DIRS); do \
+		make -C $$dir clean; \
+	done
 
-.PHONY: all test clean
+.PHONY: all test build clean

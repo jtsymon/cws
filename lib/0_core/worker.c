@@ -73,7 +73,7 @@ void worker_init (int port) {
     printf ("Starting on port: %d\n", port);
     worker_sock = init_sock (port);
     non_block (worker_sock);
-    if (load_plugin (&handler, "response_with_headers")) {
+    if (load_plugin (&handler, "respond_with_headers")) {
         die ("load_plugin");
     }
 }

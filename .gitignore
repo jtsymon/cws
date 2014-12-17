@@ -1,7 +1,5 @@
 cws
 *.o
 *.so
-tests/*
-!tests/*.c
-!tests/Makefile
+*.test
 *.swp

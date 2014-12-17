@@ -4,17 +4,12 @@ LDFLAGS+=
 
 SOURCES=$(wildcard *.c)
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLES=$(SOURCES:.c=)
-LIBRARIES=$(SOURCES:.c=.so)
-
-CORE_SOURCES=$(wildcard ./$(SRC_DIR)/*.c)
-CORE_OBJECTS=$(CORE_SOURCES:.c=.o)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 
-%.so: %.o
-	$(CC) $(LDFLAGS) $< -o $@
+$(LIB): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-%: %.o
-	$(CC) $(LDFLAGS) $< $(CORE_OBJECTS) -o $@
+$(BIN): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@

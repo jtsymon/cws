@@ -13,7 +13,7 @@ void free_plugin (struct plugin_t *plugin) {
     }
 }
 
-#define PLUGIN_PREFIX "./plugins/"
+#define PLUGIN_PREFIX "./lib/"
 #define PLUGIN_SUFFIX ".so"
 int load_plugin (struct plugin_t *plugin, char *name) {
     if (!plugin) {

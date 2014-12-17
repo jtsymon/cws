@@ -9,7 +9,7 @@
 #include "http_response.h"
 #include "io.h"
 
-void handle (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) {
+void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) {
     if (sock_fd < 0) {
         return;
     }
