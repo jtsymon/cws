@@ -61,15 +61,18 @@ static void test_headers (int size, int len, char *str) {
 
 static char *requests[] = {
     "GET /index.html HTTP/1.1\r\n\
-     Host: example.com\n",
+     Host: example.com\n\
+     \r\n",
 
     "GET /index.html\r\n\
-     Host: example.com\n",
+     Host: example.com\n\
+     \r\n",
 
     "GET /index.html HTTP/1.1\r\n\
      Host: example.com\n\
      Multiline: line1\n\
-                line2\r\n",
+                line2\r\n\
+     \r\n",
 
     NULL
 };

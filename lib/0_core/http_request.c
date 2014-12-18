@@ -42,9 +42,10 @@ static struct {
     int error;                      // any irrecoverable error the parsing encountered
     int has_request;                // whether the request has been parsed yet
     int has_version;                // whether the request has a version
-    int skip_whitespace;            // 0 for not skipping,
-                                    // 1 for skipping horizontal whitespace,
-                                    // 2 for skipping all whitespace
+    int between_fields;             // 0 for not between fields
+                                    // 1 for between key/value pair,
+                                    // 2 for between headers
+                                    // 3 for a folded header
     struct http_header_whitespace   whitespace;
     struct http_header_buffer       buffers[HTTP_HEADER_BUFFERS];
     struct http_header_string       request[3];
@@ -67,13 +68,26 @@ int headers_consume (int length, char *buffer) {
     if (headers.decoding >= HTTP_HEADER_BUFFERS) {
         return (headers.error = HTTP_OUT_OF_SEGMENTS);
     }
-    if (headers.skip_whitespace) {
+    if (headers.between_fields) {
         for (; i < length; i++) {
-            if (buffer[i] != ' ' && buffer[i] != '\t') {
-                if (headers.skip_whitespace == 2 && buffer[i] == '\n') {
-                    return (headers.error = HTTP_END_OF_HEADERS);
+            if (buffer[i] == '\n') {
+                switch (headers.between_fields) {
+                    case 2:
+                    case 3:
+                        headers.error = HTTP_END_OF_HEADERS;
+                        return 0;
+                    default:
+                        return (headers.error = HTTP_INVALID_HEADER);
                 }
-                headers.skip_whitespace = 0;
+            } else if (buffer[i] == '\r') {
+                // ignore
+            } else if (buffer[i] == ' ' || buffer[i] == '\t') {
+                if (headers.between_fields == 2) {
+                    // folded field (continue from previous)
+                    headers.between_fields = 3;
+                }
+            } else {
+                headers.between_fields = 0;
                 headers.whitespace.over_whitespace = 0;
                 if (headers.has_request) {
                     headers.headers[headers.decoding].buffer = buf;
@@ -93,7 +107,7 @@ int headers_consume (int length, char *buffer) {
                 if (buffer[i] == ':') {
                     i += 2;
                     headers.decoding ++;
-                    headers.skip_whitespace = 1;
+                    headers.between_fields = 1;
                     goto decode;
                 } else if (buffer[i] == '\n') {
                     return (headers.error = HTTP_INVALID_HEADER);
@@ -115,7 +129,7 @@ int headers_consume (int length, char *buffer) {
                             headers.headers[headers.decoding].length - (cr ? 1 : 0));
                     i++;
                     headers.decoding++;
-                    headers.skip_whitespace = 2;
+                    headers.between_fields = 2;
                     goto decode;
                 } else if (buffer[i] != '\r' && headers.whitespace.over_whitespace) {
                     headers.whitespace.over_whitespace = 0;
@@ -130,7 +144,7 @@ int headers_consume (int length, char *buffer) {
                     headers.whitespace.last_space_start_length = -1;
                     i++;
                     headers.decoding++;
-                    headers.skip_whitespace = 1;
+                    headers.between_fields = 1;
                     goto decode;
                 } else if (buffer[i] == '\r' || buffer[i] == '\n') {
                     return (headers.error = HTTP_INVALID_REQUEST);
@@ -176,7 +190,7 @@ int headers_consume (int length, char *buffer) {
                     i++;
                     headers.decoding = 0;
                     headers.has_request = 1;
-                    headers.skip_whitespace = 2;
+                    headers.between_fields = 2;
                     
                     goto decode;
                 } else if (buffer[i] != '\r' && headers.whitespace.over_whitespace) {
@@ -204,7 +218,7 @@ void headers_cleanup () {
     headers.buf = 0;
     headers.decoding = 0;
     headers.error = 0;
-    headers.skip_whitespace = 0;
+    headers.between_fields = 0;
     bzero (&headers.whitespace, sizeof (struct http_header_whitespace));
     bzero (&headers.request, sizeof (headers.request));
     bzero (&headers.headers, sizeof (headers.headers));
@@ -267,6 +281,8 @@ char *headers_get_error (int error) {
             return "An invalid header was encountered (headers must be of form 'key: value')";
         case HTTP_INVALID_REQUEST:
             return "An invalid request was encountered (requests are the first line of an HTTP request, and must be of form 'method uri version')";
+        case HTTP_END_OF_HEADERS:
+            return "The headers have already finished";
         default:
             return "Unknown error";
     }
