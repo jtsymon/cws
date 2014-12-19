@@ -19,7 +19,6 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
     FD_SET (sock_fd, &set);
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
-    headers_cleanup ();
     while (select (FD_SETSIZE, &set, NULL, NULL, &timeout) == 1) {
         char *buffer = malloc(255);
         int len = read (sock_fd, buffer, 255);
@@ -27,7 +26,7 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
             break;
         }
     }
-    if (!headers_has_request()) {
+    if (headers_is_error (headers_get_state ()) || !headers_has_request()) {
         goto hangup;
     }
     int j;
@@ -46,21 +45,18 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
     char *field;
     if ((field = get_request (0))) {
         sprintf (response_buffer, "Method: %s\n", field);
-        free (field);
         if (write (sock_fd, response_buffer, strlen (response_buffer)) < 0) {
             goto hangup;
         }
     }
     if ((field = get_request (1))) {
         sprintf (response_buffer, "Path: %s\n", field);
-        free (field);
         if (write (sock_fd, response_buffer, strlen (response_buffer)) < 0) {
             goto hangup;
         }
     }
     if (headers_has_version () && (field = get_request (2))) {
         sprintf (response_buffer, "Version: %s\n", field);
-        free (field);
         if (write (sock_fd, response_buffer, strlen (response_buffer)) < 0) {
             goto hangup;
         }
@@ -74,22 +70,17 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
         char *key = get_header (j, 0);
         char *val = get_header (j, 1);
         if (!key || !val) {
-            free (key);
-            free (val);
             break;
         }
         if (write (sock_fd, key, strlen(key)) < 0 ||
                 write (sock_fd, " = ", 3) < 0 ||
                 write (sock_fd, val, strlen(val)) < 0 ||
                 write (sock_fd, "\n", 1) < 0) {
-            free (key);
-            free (val);
             break;
         }
-        free (key);
-        free (val);
     }
 hangup:
+    headers_cleanup ();
     getSO_ERROR(sock_fd);
     if (close (sock_fd)) {
         fprintf (stderr, "Failed to close socket\n");
