@@ -24,7 +24,7 @@ static int print_header (char *key, char *val) {
     return 1;
 }
 
-static void test_headers (int size, int len, char *str) {
+static void test_consume (int size, int len, char *str) {
     int parts= len / size;
     int rem  = len % size;
     while (parts--) {
@@ -43,6 +43,9 @@ static void test_headers (int size, int len, char *str) {
             fail ();
         }
     }
+}
+
+static void test_headers () {
     headers_compact();
     if (!headers_has_request()) {
         fprintf (stderr, indent "Failed to parse request line\n");
@@ -57,7 +60,6 @@ static void test_headers (int size, int len, char *str) {
     while (print_header (get_header (i, 0), get_header (i, 1))) {
         i++;
     }
-    headers_cleanup ();
 }
 
 static char *requests[] = {
@@ -85,7 +87,10 @@ int main (void) {
     int i;
     for (i = 0; requests[i]; i++) {
         printf ("Testing request %d:\n", i + 1);
-        test_headers (10, strlen (requests[i]), requests[i]);
+        test_consume (10, strlen (requests[i]), requests[i]);
+        test_headers ();
+        printf ("Value = %s\n", get_value ("Host"));
+        headers_cleanup ();
     }
     return 0;
 }

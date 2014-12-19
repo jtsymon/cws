@@ -285,7 +285,7 @@ void headers_cleanup () {
     bzero (&headers.compact, sizeof (headers.compact));
 }
 
-static inline char *get_field (struct http_header_string field) {
+static char *get_field (struct http_header_string field) {
     if (headers.state == STATE_COMPACTED) {
         return NULL;
     }
@@ -394,6 +394,27 @@ char *get_header (int header, int part) {
         headers.compact.headers[i] = get_field (headers.headers[i]);
     }
     return headers.compact.headers[i];
+}
+
+char *get_value (char *key) {
+    if (!headers.has_request || (headers.state != STATE_COMPACTED && headers_compact())) {
+        return NULL;
+    }
+    int i;
+    // iterate over keys (every second string)
+    for (i = 0; i < headers.decoding; i += 2) {
+        char *k = key,
+             *p = headers.compact.headers[i];
+        while (*k && *p == *k) {
+            k++;
+            p++;
+        }
+        // if the key matches, return the value
+        if (!*k && !*p) {
+            return headers.compact.headers[i + 1];
+        }
+    }
+    return NULL;
 }
 
 int headers_is_error (int state) {

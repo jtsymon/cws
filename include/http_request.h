@@ -3,6 +3,7 @@ void headers_cleanup ();
 int headers_compact ();
 char *get_request (int part);
 char *get_header (int header, int part);
+char *get_value (char *key);
 int headers_is_error (int state);
 int headers_get_state ();
 char *headers_explain_state (int state);
