@@ -15,7 +15,7 @@ void free_plugin (struct plugin_t *plugin) {
 
 #define PLUGIN_PREFIX "./lib/"
 #define PLUGIN_SUFFIX ".so"
-int load_plugin (struct plugin_t *plugin, char *name) {
+int load_plugin (struct plugin_t *plugin, const char *name) {
     if (!plugin) {
         return 1;
     }
@@ -28,6 +28,7 @@ int load_plugin (struct plugin_t *plugin, char *name) {
     tmp += name_len;
     strcpy (tmp, PLUGIN_SUFFIX);
     plugin->libhandle = dlopen(rel_name, RTLD_NOW);
+    free (rel_name);
     if (!plugin->libhandle) {
         fprintf(stderr, "Error loading DSO: %s\n", dlerror());
         return 1;

@@ -9,3 +9,4 @@ int headers_get_state ();
 char *headers_explain_state (int state);
 int headers_has_version ();
 int headers_has_request ();
+int headers_parse (int fd);

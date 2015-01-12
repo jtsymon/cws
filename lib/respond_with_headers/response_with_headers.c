@@ -10,22 +10,8 @@
 #include "io.h"
 
 void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) {
-    if (sock_fd < 0) {
-        return;
-    }
-    fd_set set;
-    struct timeval timeout;
-    FD_ZERO (&set);
-    FD_SET (sock_fd, &set);
-    timeout.tv_sec = 1;
-    timeout.tv_usec = 0;
-    while (select (FD_SETSIZE, &set, NULL, NULL, &timeout) == 1) {
-        char *buffer = malloc(255);
-        int len = read (sock_fd, buffer, 255);
-        if (len <= 0 || headers_consume (len, buffer)) {
-            break;
-        }
-    }
+
+    headers_parse (sock_fd);
     if (headers_is_error (headers_get_state ()) || !headers_has_request()) {
         goto hangup;
     }
@@ -81,8 +67,5 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
     }
 hangup:
     headers_cleanup ();
-    getSO_ERROR(sock_fd);
-    if (close (sock_fd)) {
-        fprintf (stderr, "Failed to close socket\n");
-    }
+    hangup (sock_fd);
 }

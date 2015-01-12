@@ -4,4 +4,4 @@ struct plugin_t {
 };
 
 void free_plugin (struct plugin_t *plugin);
-int load_plugin (struct plugin_t *plugin, char *name);
+int load_plugin (struct plugin_t *plugin, const char *name);

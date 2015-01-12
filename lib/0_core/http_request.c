@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdlib.h>
 
 #include "http_request.h"
@@ -15,6 +16,7 @@
 #define STATE_INVALID_HEADER    3
 #define STATE_INVALID_REQUEST   4
 #define STATE_END_OF_HEADERS    5
+#define STATE_CONNECTION_ERROR  6
 #define STATE_COMPACTED         -1
 
 struct http_header_buffer {
@@ -456,4 +458,26 @@ int headers_has_version () {
 
 int headers_has_request() {
     return headers.has_request;
+}
+
+int headers_parse (int fd) {
+    if (fd < 0) {
+        return (headers.state = STATE_CONNECTION_ERROR);
+    }
+    fd_set set;
+    struct timeval timeout;
+    FD_ZERO (&set);
+    FD_SET (fd, &set);
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+   
+    while (select (FD_SETSIZE, &set, NULL, NULL, &timeout) == 1) {
+        char *buffer = malloc(255);
+        int len = read (fd, buffer, 255);
+        if (len <= 0 || headers_consume (len, buffer)) {
+            break;
+        }
+    }
+
+    return headers.state;
 }

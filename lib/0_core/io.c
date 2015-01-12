@@ -16,6 +16,11 @@ int init_sock (int port) {
         die("socket");
     }
 
+    // SO_REUSEADDR
+    int optval = 1;
+    setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval);
+    setsockopt (fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof optval);
+
     struct sockaddr_in serv_addr = {
         .sin_family = AF_INET,
         .sin_addr.s_addr = INADDR_ANY,
@@ -72,4 +77,13 @@ int getSO_ERROR(int fd) {
     if (err)
         errno = err;              // set errno to the socket SO_ERROR
     return err;
+}
+
+void hangup (int fd) {
+    if (fd > 0) {
+        getSO_ERROR(fd);
+        if (close (fd)) {
+            fprintf (stderr, "Failed to close socket\n");
+        }
+    }
 }

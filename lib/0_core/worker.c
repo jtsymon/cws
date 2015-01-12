@@ -22,6 +22,7 @@ struct worker {
     int pipe;
 };
 
+static void cleanup ();
 static int worker_sock;
 const int worker_count;
 static struct worker *workers = NULL;
@@ -48,6 +49,7 @@ static void work (int pipe) {
             if ((events[i].events & EPOLLERR) ||
                     (events[i].events & EPOLLHUP) ||
                     (!(events[i].events & EPOLLIN))) {
+                cleanup ();
                 _Exit(1);
             } else if (worker_sock == events[i].data.fd) {
                 // socket event
@@ -61,6 +63,7 @@ static void work (int pipe) {
                 read (pipe, &cmd, 1);
                 switch (cmd) {
                     case CMD_TERM:
+                        cleanup ();
                         _Exit(0);
                         break;
                 }
@@ -69,11 +72,11 @@ static void work (int pipe) {
     }
 }
 
-void worker_init (int port) {
+void worker_init (int port, const char *handler_plugin) {
     printf ("Starting on port: %d\n", port);
     worker_sock = init_sock (port);
     non_block (worker_sock);
-    if (load_plugin (&handler, "respond_with_headers")) {
+    if (load_plugin (&handler, handler_plugin)) {
         die ("load_plugin");
     }
 }
@@ -83,6 +86,7 @@ static void respawn (int id) {
     if (pipe (pipefd) == -1) {
         die("pipe");
     }
+    int seed = rand();
     int pid = fork();
     if (pid) {
         // master
@@ -94,6 +98,7 @@ static void respawn (int id) {
         printf("Child %d is %d\n", id, pid);
     } else {
         // worker
+        srand (seed);
         worker_id = id;
         close (pipefd[1]);
         work (pipefd[0]);
@@ -172,6 +177,11 @@ void finish (int force) {
             remaining--;
         }
     }
+    cleanup ();
     exit(0);
 }
 
+static void cleanup () {
+    free_plugin (&handler);
+    free (workers);
+}

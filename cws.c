@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <sys/epoll.h>
+#include <time.h>
 
 #include "misc.h"
 #include "io.h"
@@ -31,6 +32,7 @@ static void cleanup() {
 
 int main (int argc, char **argv) {
 
+    srand (time (NULL));
     int port = 8080;
     int work = 4;
 
@@ -49,8 +51,7 @@ int main (int argc, char **argv) {
         selfpiperead = pipefd[0];
     }
 
-    worker_init (port);
-    printf("Starting\n");
+    worker_init (port, "file");
     spawn_workers (work);
 
     tcgetattr (STDIN_FILENO, &old_term);
@@ -78,11 +79,11 @@ int main (int argc, char **argv) {
                 switch (cmd) {
                     case 'k':
                         printf ("Killing workers\n");
-                        finish(0);
+                        finish(1);
                         break;
                     case 'q':
                         printf ("Telling workers to exit\n");
-                        finish(1);
+                        finish(0);
                         break;
                     case '+':
                         spawn_workers (worker_count + 1);
