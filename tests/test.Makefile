@@ -4,7 +4,7 @@ BIN := ../$(NAME)
 INCLUDE=../../include
 
 CFLAGS+=-I$(INCLUDE)
-LDFLAGS+=-Llib
+LDFLAGS+=-L.
 
 all: test
 

@@ -4,7 +4,7 @@ LIB := ../$(NAME).so
 INCLUDE=../../include
 
 CFLAGS+=-fPIC -I$(INCLUDE)
-LDFLAGS+=-shared -Llib
+LDFLAGS+=-shared -L.
 
 all: build
 

@@ -5,7 +5,7 @@ TESTS_DIR=tests
 LIB_DIR=lib
 
 CFLAGS+=-I$(INC_DIR)
-LDFLAGS+=-l:lib/core.so
+LDFLAGS+=-L. -l:lib/core.so
 
 EXECUTABLE=cws
 
