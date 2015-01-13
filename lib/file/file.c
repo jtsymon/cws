@@ -57,10 +57,16 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
     }
 
     response_init (200);
-    write_headers (sock_fd);
+    if (write_headers (sock_fd)) {
+        close (file_fd);
+        goto _404;
+    }
     len = read (file_fd, response_buffer, 255);
     while (len > 0) {
-        write (sock_fd, response_buffer, len);
+        if (write (sock_fd, response_buffer, len) < 0) {
+            perror ("write");
+            break;
+        }
         len = read (file_fd, response_buffer, 255);
     }
 

@@ -28,7 +28,8 @@ void sighandleall (void (*handler)(int), int flags) {
         sigaction (SIGCHLD, &act, NULL) ||
         sigaction (SIGHUP,  &act, NULL) ||
         sigaction (SIGUSR1, &act, NULL) ||
-        sigaction (SIGUSR2, &act, NULL)) {
+        sigaction (SIGUSR2, &act, NULL) ||
+        sigaction (SIGPIPE, &act, NULL)) {
             die("sigaction");
     }
 }
