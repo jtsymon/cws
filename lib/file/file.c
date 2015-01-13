@@ -19,10 +19,6 @@ int write_headers (int fd) {
     return error;
 }
 
-void _200 (int sock_fd, int file_fd) {
-    return;
-}
-
 void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) {
     
     headers_parse (sock_fd);
