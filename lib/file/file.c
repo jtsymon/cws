@@ -14,7 +14,9 @@
 int write_headers (int fd) {
     int headers_len;
     char *headers = get_response(&headers_len);
-    return (!headers || headers_len <= 0 || write (fd, headers, headers_len) < 0);
+    int error = (!headers || headers_len <= 0 || write (fd, headers, headers_len) < 0);
+    free (headers);
+    return error;
 }
 
 void _200 (int sock_fd, int file_fd) {
