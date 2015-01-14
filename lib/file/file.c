@@ -55,6 +55,9 @@ void run (int worker_id, int sock_fd, struct sockaddr addr, socklen_t addr_len) 
     }
 
     response_init (200);
+    char content_length[25];
+    sprintf (content_length, "%d", info.st_size);
+    response_add ("Content-Length", content_length);
     if (write_headers (sock_fd)) {
         close (file_fd);
         goto _404;
